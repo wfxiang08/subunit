@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 #!/usr/bin/python
 #
 # Simple subunit testrunner for python

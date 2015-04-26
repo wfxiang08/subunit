@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 #
 #  subunit: extensions to Python unittest to get test results from subprocesses.
 #  Copyright (C) 2013  Robert Collins <robertc@robertcollins.net>

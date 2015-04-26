@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 #
 #  subunit: extensions to Python unittest to get test results from subprocesses.
 #  Copyright (C) 2005  Robert Collins <robertc@robertcollins.net>
@@ -514,6 +515,7 @@ class TestProtocolServer(object):
                 stream = stream.buffer
         self._stream = stream
         self._forward_stream = forward_stream or DiscardStream()
+
         # state objects we can switch too
         self._in_test = _InTest(self)
         self._outside_test = _OutSideTest(self)
@@ -525,6 +527,7 @@ class TestProtocolServer(object):
         self._reading_uxsuccess_details = _ReadingUnexpectedSuccessDetails(self)
         # start with outside test.
         self._state = self._outside_test
+
         # Avoid casts on every call
         self._plusminus = _b('+-')
         self._push_sym = _b('push')
@@ -618,13 +621,20 @@ class TestProtocolClient(testresult.TestResult):
 
     def __init__(self, stream):
         testresult.TestResult.__init__(self)
+
+        # 文件
         stream = make_stream_binary(stream)
         self._stream = stream
+
         self._progress_fmt = _b("progress: ")
         self._bytes_eol = _b("\n")
+
+        # 展示进度
         self._progress_plus = _b("+")
         self._progress_push = _b("push")
         self._progress_pop = _b("pop")
+
+        # 开始、结束符号
         self._empty_bytes = _b("")
         self._start_simple = _b(" [\n")
         self._end_simple = _b("]\n")
@@ -643,6 +653,8 @@ class TestProtocolClient(testresult.TestResult):
             to subunit.Content objects.
         """
         self._addOutcome("error", test, error=error, details=details)
+
+        # 默认是需要跑完所有的Case
         if self.failfast:
             self.stop()
 
@@ -696,15 +708,22 @@ class TestProtocolClient(testresult.TestResult):
         :param error_permitted: If True then one and only one of error or
             details must be supplied. If False then error must not be supplied
             and details is still optional.  """
+
+        # 一行的开始
         self._stream.write(_b("%s: " % outcome) + self._test_id(test))
+
+        # 有效性检查
         if error_permitted:
             if error is None and details is None:
                 raise ValueError
         else:
             if error is not None:
                 raise ValueError
+
+        # 准备写Error
         if error is not None:
             self._stream.write(self._start_simple)
+
             tb_content = TracebackContent(error, test)
             for bytes in tb_content.iter_bytes():
                 self._stream.write(bytes)
@@ -712,6 +731,7 @@ class TestProtocolClient(testresult.TestResult):
             self._write_details(details)
         else:
             self._stream.write(_b("\n"))
+
         if details is not None or error is not None:
             self._stream.write(self._end_simple)
 
@@ -811,15 +831,18 @@ class TestProtocolClient(testresult.TestResult):
         """
         self._stream.write(_b(" [ multipart\n"))
         for name, content in sorted(details.items()):
-            self._stream.write(_b("Content-Type: %s/%s" %
-                (content.content_type.type, content.content_type.subtype)))
+
+            self._stream.write(_b("Content-Type: %s/%s" %(content.content_type.type, content.content_type.subtype)))
             parameters = content.content_type.parameters
+
+            # 处理所有的kvs
             if parameters:
                 self._stream.write(_b(";"))
                 param_strs = []
                 for param, value in parameters.items():
                     param_strs.append("%s=%s" % (param, value))
                 self._stream.write(_b(",".join(param_strs)))
+
             self._stream.write(_b("\n%s\n" % name))
             encoder = chunked.Encoder(self._stream)
             list(map(encoder.write, content.iter_bytes()))
@@ -1192,10 +1215,13 @@ class ProtocolTestCase(object):
         if result is None:
             result = self.defaultTestResult()
         protocol = TestProtocolServer(result, self._passthrough, self._forward)
+
+        # 读取数据时出现问题?
         line = self._stream.readline()
         while line:
             protocol.lineReceived(line)
             line = self._stream.readline()
+
         protocol.lostConnection()
 
 
